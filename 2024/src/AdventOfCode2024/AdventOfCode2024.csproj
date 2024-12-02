@@ -15,7 +15,17 @@
     </ItemGroup>
     
     <ItemGroup>
+      <None Remove="Inputs\02.txt" />
+    </ItemGroup>
+    
+    <ItemGroup>
       <Folder Include="Helpers\" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Content Update="Inputs\02.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>
