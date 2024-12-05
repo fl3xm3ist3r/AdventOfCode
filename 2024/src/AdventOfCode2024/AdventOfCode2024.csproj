@@ -15,13 +15,15 @@
     </ItemGroup>
     
     <ItemGroup>
-      <None Remove="Inputs\02.txt" />
-      <None Remove="Inputs\03.txt" />
-      <None Remove="Inputs\04.txt" />
+      <Compile Remove="Helpers\**" />
+      <EmbeddedResource Remove="Helpers\**" />
+      <None Remove="Helpers\**" />
     </ItemGroup>
     
     <ItemGroup>
-      <Folder Include="Helpers\" />
+      <None Remove="Inputs\02.txt" />
+      <None Remove="Inputs\04.txt" />
+      <None Remove="Inputs\05.txt" />
     </ItemGroup>
     
     <ItemGroup>
