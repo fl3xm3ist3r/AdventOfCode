@@ -1,90 +1,39 @@
-﻿using System.Security.Cryptography.X509Certificates;
-using System.Transactions;
+﻿using System.Text;
+using System.Text.RegularExpressions;
 
 namespace AdventOfCode2024.Days;
-
-using Spectre.Console;
-using System.Text.RegularExpressions;
 
 public class Day06 : DayBase
 {
     public override ValueTask<string> Solve_1()
     {
-        var grid = Input.Value.SplitByLine().Select(e => e.ToCharArray().ToList()).ToList();
+        var (grid, startX, startY, walkHistory) = InitializeGridAndHistory(Input.Value);
 
-        var startX = 0;
-        var startY = 0;
-        List<List<bool>> walkHistory = new List<List<bool>>();
-        for (int y = 0; y < grid.Count; y++)
-        {
-            List<bool> newLine = new List<bool>();
-            for (int x = 0; x < grid[0].Count; x++)
-            {
-                var currentChar = grid[y][x];
+        TraverseGrid(grid, walkHistory, startY, startX);
 
-                if (currentChar == '^')
-                {
-                    startX = x;
-                    startY = y;
-
-                    newLine.Add(true);
-                    continue;
-                }
-
-                newLine.Add(false);
-            }
-            walkHistory.Add(newLine);
-        }
-
-        WalkTroughGrid(grid, walkHistory, startY, startX);
-
-        var total = walkHistory.Sum(e => e.Count(g => g));
+        var total = walkHistory.Sum(row => row.Count(cell => cell));
         return new ValueTask<string>(total.ToString());
     }
 
     public override ValueTask<string> Solve_2()
     {
-        var grid = Input.Value.SplitByLine().Select(e => e.ToCharArray().ToList()).ToList();
-
-        var startX = 0;
-        var startY = 0;
-        List<List<bool>> walkHistory = new List<List<bool>>();
-        for (int y = 0; y < grid.Count; y++)
-        {
-            List<bool> newLine = new List<bool>();
-            for (int x = 0; x < grid[0].Count; x++)
-            {
-                var currentChar = grid[y][x];
-
-                if (currentChar == '^')
-                {
-                    startX = x;
-                    startY = y;
-
-                    newLine.Add(true);
-                    continue;
-                }
-
-                newLine.Add(false);
-            }
-            walkHistory.Add(newLine);
-        }
-
+        var (grid, startX, startY, walkHistory) = InitializeGridAndHistory(Input.Value);
         var total = 0;
+
         for (int y = 0; y < grid.Count; y++)
         {
             for (int x = 0; x < grid[0].Count; x++)
             {
-                if (x != startX || y != startY)
-                {
-                    List<List<char>> coppyGrid = grid.Select(row => new List<char>(row)).ToList();
-                    coppyGrid[y][x] = '#';
-                    List<List<bool>> walkHistoryCoppy = walkHistory.Select(row => new List<bool>(row)).ToList();
+                if (x == startX && y == startY) continue;
 
-                    if (WalkTroughGrid(coppyGrid, walkHistoryCoppy, startY, startX, true))
-                    {
-                        total++;
-                    }
+                var modifiedGrid = CopyGrid(grid);
+                modifiedGrid[y][x] = '#';
+
+                var walkHistoryCopy = CopyWalkHistory(walkHistory);
+
+                if (TraverseGrid(modifiedGrid, walkHistoryCopy, startY, startX, true))
+                {
+                    total++;
                 }
             }
         }
@@ -92,23 +41,58 @@ public class Day06 : DayBase
         return new ValueTask<string>(total.ToString());
     }
 
-    private static bool WalkTroughGrid(List<List<char>> grid, List<List<bool>> walkHistory, int startY, int startX, bool part2 = false)
+    private static (List<List<char>> grid, int startX, int startY, List<List<bool>> walkHistory) InitializeGridAndHistory(string input)
+    {
+        var grid = input.SplitByLine()
+            .Select(line => line.ToCharArray().ToList())
+            .ToList();
+
+        var startX = 0;
+        var startY = 0;
+        var walkHistory = new List<List<bool>>();
+
+        for (int y = 0; y < grid.Count; y++)
+        {
+            var newLine = new List<bool>();
+            for (int x = 0; x < grid[0].Count; x++)
+            {
+                if (grid[y][x] == '^')
+                {
+                    startX = x;
+                    startY = y;
+                    newLine.Add(true);
+                }
+                else
+                {
+                    newLine.Add(false);
+                }
+            }
+            walkHistory.Add(newLine);
+        }
+
+        return (grid, startX, startY, walkHistory);
+    }
+
+    private static List<List<char>> CopyGrid(List<List<char>> grid) =>
+        grid.Select(row => new List<char>(row)).ToList();
+
+    private static List<List<bool>> CopyWalkHistory(List<List<bool>> walkHistory) =>
+        walkHistory.Select(row => new List<bool>(row)).ToList();
+
+    private static bool TraverseGrid(List<List<char>> grid, List<List<bool>> walkHistory, int startY, int startX, bool part2 = false)
     {
         var direction = Direction.Up;
         var y = startY;
         var x = startX;
-
-        var path = new HashSet<string>();
+        var visitedPaths = new HashSet<string>();
 
         while (true)
         {
-            var check = CheckNextStep(grid, ref y,ref x, direction);
-            if (check == State.OutOfBound)
-            {
-                break;
-            }
+            var state = GetNextState(grid, ref y, ref x, direction);
 
-            if (check == State.Free)
+            if (state == State.OutOfBound) break;
+
+            if (state == State.Free)
             {
                 if (!part2)
                 {
@@ -116,13 +100,10 @@ public class Day06 : DayBase
                 }
                 else
                 {
-                    var current = $"{y}, {x}, {direction}";
-                    if (path.Contains(current))
-                    {
-                        return true;
-                    }
+                    var currentPath = $"{y},{x},{direction}";
+                    if (visitedPaths.Contains(currentPath)) return true;
 
-                    path.Add(current);
+                    visitedPaths.Add(currentPath);
                 }
             }
             else
@@ -134,74 +115,56 @@ public class Day06 : DayBase
         return false;
     }
 
-    private static Direction TurnRight(Direction oldDirection)
-    {
-        switch (oldDirection)
+    private static Direction TurnRight(Direction direction) =>
+        direction switch
         {
-            case Direction.Up:
-                return Direction.Right;
-            case Direction.Down:
-                return Direction.Left;
-            case Direction.Left:
-                return Direction.Up;
-            case Direction.Right:
-                return Direction.Down;
-        }
+            Direction.Up => Direction.Right,
+            Direction.Right => Direction.Down,
+            Direction.Down => Direction.Left,
+            Direction.Left => Direction.Up,
+            _ => throw new InvalidOperationException("Invalid direction")
+        };
 
-        throw new Exception();
-    }
-
-    private static State CheckNextStep(List<List<char>> grid, ref int y, ref int x, Direction direction)
+    private static State GetNextState(List<List<char>> grid, ref int y, ref int x, Direction direction)
     {
-        var (newY, newX) = GetDirectionChange(direction);
-        newY += y;
-        newX += x;
+        var (dy, dx) = GetDirectionOffset(direction);
+        var newY = y + dy;
+        var newX = x + dx;
 
-        if (grid.Count <= newY || newY < 0 ||
-            grid[0].Count <= newX || newX < 0)
+        if (newY < 0 || newY >= grid.Count || newX < 0 || newX >= grid[0].Count)
         {
             return State.OutOfBound;
         }
-        if (grid[newY][newX] == '#')
-        {
-            return State.Wall;
-        }
+
+        if (grid[newY][newX] == '#') return State.Wall;
 
         y = newY;
         x = newX;
         return State.Free;
     }
 
-    private static (int yChange, int xChange) GetDirectionChange(Direction direction)
-    {
-        switch (direction)
+    private static (int yOffset, int xOffset) GetDirectionOffset(Direction direction) =>
+        direction switch
         {
-            case Direction.Up:
-                return (-1, 0);
-            case Direction.Down:
-                return (1, 0);
-            case Direction.Left:
-                return (0, -1);
-            case Direction.Right:
-                return (0, 1);
-        }
-
-        throw new Exception();
-    }
+            Direction.Up => (-1, 0),
+            Direction.Right => (0, 1),
+            Direction.Down => (1, 0),
+            Direction.Left => (0, -1),
+            _ => throw new InvalidOperationException("Invalid direction")
+        };
 
     private enum Direction
     {
         Up,
+        Right,
         Down,
-        Left,
-        Right
+        Left
     }
 
     private enum State
     {
         OutOfBound,
         Free,
-        Wall,
-        Loop
+        Wall
     }
 }
