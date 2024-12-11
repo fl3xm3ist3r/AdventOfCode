@@ -1,7 +1,6 @@
 ﻿namespace AdventOfCode2024.Days;
 
 using Spectre.Console;
-using System.Text.RegularExpressions;
 
 public class Day04 : DayBase
 {

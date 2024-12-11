@@ -1,7 +1,4 @@
-﻿using System.Text;
-using System.Text.RegularExpressions;
-
-namespace AdventOfCode2024.Days;
+﻿namespace AdventOfCode2024.Days;
 
 public class Day06 : DayBase
 {
