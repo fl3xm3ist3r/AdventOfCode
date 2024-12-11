@@ -25,6 +25,7 @@
       <None Remove="Inputs\04.txt" />
       <None Remove="Inputs\05.txt" />
       <None Remove="Inputs\06.txt" />
+      <None Remove="Inputs\07.txt" />
     </ItemGroup>
     
     <ItemGroup>
@@ -35,6 +36,12 @@
     
     <ItemGroup>
       <Content Update="Inputs\06.txt">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Content Update="Inputs\07.txt">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
     </ItemGroup>
