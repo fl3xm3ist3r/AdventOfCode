@@ -7,7 +7,7 @@ public class Day10 : DayBase
 {
     public override ValueTask<string> Solve_1()
     {
-        var map = ParseInputToDisk(Input.Value);
+        var map = ParseInputToGrid(Input.Value);
 
         var results = new List<List<(int y, int x)>>();
         for (var y = 0; y < map.Count; y++)
@@ -30,7 +30,7 @@ public class Day10 : DayBase
 
     public override ValueTask<string> Solve_2()
     {
-        var map = ParseInputToDisk(Input.Value);
+        var map = ParseInputToGrid(Input.Value);
 
         var results = new List<List<(int y, int x)>>();
         for (var y = 0; y < map.Count; y++)
@@ -112,7 +112,7 @@ public class Day10 : DayBase
         Right
     }
 
-    private static List<List<int>> ParseInputToDisk(string input)
+    private static List<List<int>> ParseInputToGrid(string input)
     {
         return input.SplitByLine().Select(x => x.ToCharArray().Select(e => int.Parse($"{e}")).ToList()).ToList();
     }
